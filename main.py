@@ -5,11 +5,13 @@ import seaborn as sb
 from sklearn import preprocessing
 from sklearn.ensemble import RandomForestRegressor
 
+#load the training dataset
 tr_dataset = pd.read_csv('training data.csv')
+#drop irrelevant columns
 tr_dataset = tr_dataset.drop(['Instance', 'Wears Glasses', 'Hair Color', 'Body Height [cm]'], axis = 1)
 #tr_dataset.info()
 
-#finding the missing data from the training dataset
+#finding the missing data from the training dataset using the heatmap
 sb.heatmap(tr_dataset.isnull(), yticklabels=False)
 plt.show()
 
@@ -65,6 +67,8 @@ plt.show()
 # plt.show()
 # #----------------------------------------------------------------------------
 # =============================================================================
+
+#creating the noise function to avoid overfitting
 def addNoise(dataframe, noise_level):
     return dataframe * (1 + noise_level * np.random.rand(len(dataframe)))
 
@@ -92,12 +96,14 @@ categorical_columns = ['Gender', 'Country', 'Profession', 'University Degree']
 tr_targetX, target_mapping, default_mapping = targetEncoding(tr_dataset, 'Income in EUR', categorical_columns,100, 10, 0.05)
 
 #----------------------------------------------------------------------------
-#finding the missing data from the encoded dataset
+
+#finding the missing data from the encoded dataset using the heatmap
 sb.heatmap(tr_targetX.isnull(), yticklabels=False)
 plt.show()
 #----------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
+
 #filling the missing values for numerical columns
 def fillNA(dataframe, num_cols):
     data = {}
@@ -109,6 +115,7 @@ numerical_columns = ['Year of Record', 'Age']
 tr_targetX = fillNA(tr_targetX, numerical_columns)
 #----------------------------------------------------------------------------
 
+
 tr_X = tr_targetX.iloc[:, :-1]
 tr_y = tr_targetX.iloc[:, -1]
 
@@ -116,6 +123,7 @@ tr_y = tr_targetX.iloc[:, -1]
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(tr_X, tr_y, test_size = 0.25, random_state = 7)
 
+#using rfr for training the model
 regressor = RandomForestRegressor(n_estimators=250, criterion='mse', max_depth=30)
 regressor.fit(X_train, y_train)
 y_pred = regressor.predict(X_test)
@@ -126,29 +134,33 @@ print('The accuracy of the regression model is: ',regressor.score(tr_X,tr_y))
 print ('RMSE is: ', sqrt(mean_squared_error(y_test, y_pred)))
 #----------------------------------------------------------------------------
 
-
+#load the test dataset
 ts_dataset = pd.read_csv('test data.csv')
 ts_dataset = ts_dataset.drop(['Instance', 'Wears Glasses', 'Hair Color', 'Body Height [cm]'], axis = 1)
 #ts_dataset.info()
 
-#finding the missing data from the training dataset
+#finding the missing data from the training dataset using the heatmap
 sb.heatmap(ts_dataset.isnull(), yticklabels=False)
 plt.show()
 
+#mapping the test dataset with target encoding values
 ts_targetX = ts_dataset.copy()
 for column in categorical_columns:
     ts_targetX.loc[:, column] = ts_targetX[column].map(target_mapping[column])
     ts_targetX[column].fillna(default_mapping[column], inplace =True)
 
 #----------------------------------------------------------------------------
-#finding the missing data from the encoded dataset
+
+#finding the missing data from the encoded dataset using the heatmap
 sb.heatmap(ts_targetX.isnull(), yticklabels=False)
 plt.show()
 #----------------------------------------------------------------------------
 
+#filling the missing numerical values in the test dataset
 ts_targetX = fillNA(ts_targetX, numerical_columns)
 
 ts_X = ts_targetX.iloc[:, :-1]
 ts_y = ts_targetX.iloc[:, -1]
 
+#predicting the dependant variable for the test dataset
 ts_y_pred = regressor.predict(ts_X)
